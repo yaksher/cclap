@@ -23,12 +23,12 @@ The fields of ARGS_T are
 - `char *process_name`: the first argument in argv
 - `char **extras`: all unprocessed arguments. This array is `NULL`-terminated.
 - `size_t num_extras`: the number of unprocessed arguments
-- additional fields governed by the value of the CLAP_ARGS macro when this
+- additional fields governed by the value of the CCLAP_ARGS macro when this
      header file is included (further information below).
 
 
 
-When this file is included, the CLAP_ARGS macro should consist of 0 or more
+When this file is included, the CCLAP_ARGS macro should consist of 0 or more
 whitespace separated invocations to the following macros:
 - `POSITIONAL(type, name)`: `type` is a non-bool supported type, name is a
      valid C identifier which is used to access the positional argument in
