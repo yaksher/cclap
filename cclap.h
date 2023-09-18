@@ -12,11 +12,13 @@
 #define PARSE_LONG CLAP_PREFIXED(_parse_long_)
 #define PARSE_SHORT CLAP_PREFIXED(_parse_short_)
 #define PARSE_NAMED CLAP_PREFIXED(_parse_named_)
+#define FPRINT_DESCRIPTIONS CLAP_PREFIXED(fprint_descriptions)
 #define ARGS_DESTROY CLAP_PREFIXED(args_destroy)
 #define PARSE CLAP_PREFIXED(parse)
+#define IS_BOOL(TYPE) (strcmp(#TYPE, "bool") == 0 || strcmp(#TYPE, "_Bool") == 0)
 
 
-#define POSITIONAL(TYPE, NAME) TYPE NAME;
+#define POSITIONAL(TYPE, NAME, ...) TYPE NAME;
 #define NAMED(TYPE, NAME, ...) TYPE NAME;
 #define NAMED_SHORT NAMED
 #define NAMED_LONG NAMED
@@ -37,7 +39,7 @@ static int PARSE_POSITIONAL(ARGS_T *args) {
 #define NAMED(...)
 #define NAMED_LONG NAMED
 #define NAMED_SHORT NAMED
-#define POSITIONAL(TYPE, NAME)\
+#define POSITIONAL(TYPE, NAME, ...)\
     if (*extra == NULL) {                               \
         goto EXIT;                                      \
     }                                                   \
@@ -106,7 +108,7 @@ static int PARSE_LONG(ARGS_T *args, char *argv[]) {
                 return 2;                                   \
             }                                               \
         }                                                   \
-        if (strcmp(#TYPE, "bool") == 0) {                   \
+        if (IS_BOOL(TYPE)) {                                \
             *(bool *) &args->NAME = true;                   \
             return 1;                                       \
         }                                                   \
@@ -135,7 +137,7 @@ static int PARSE_SHORT(ARGS_T *args, char *argv[]) {
 #define POSITIONAL(...)
 #define NAMED_LONG(...)
 #define NAMED_SHORT NAMED
-#define NAMED(TYPE, NAME, SHORT)\
+#define NAMED(TYPE, NAME, SHORT, ...)\
     if (*s == SHORT) {                                      \
         s++;                                                \
         if (strcmp(#TYPE, "char *") == 0) {                 \
@@ -166,7 +168,7 @@ static int PARSE_SHORT(ARGS_T *args, char *argv[]) {
                 args_i++;                                   \
             }                                               \
         }                                                   \
-        if (strcmp(#TYPE, "bool") == 0) {                   \
+        if (IS_BOOL(TYPE)) {                                \
             *(bool *) &args->NAME = true;                   \
         }                                                   \
         continue;                                           \
@@ -213,7 +215,7 @@ static void ARGS_DESTROY(ARGS_T *args) {
     }
     free(args->proccess_name);
     #define FREE(TYPE, NAME, ...)               \
-        if (strcmp(#TYPE, "bool")) {            \
+        if (!IS_BOOL(TYPE)) {                   \
             if ((void *) args->NAME != NULL) {  \
                 free((void *) args->NAME);      \
             }                                   \
@@ -285,6 +287,9 @@ static void ARGS_DESTROY(ARGS_T *args) {
  * - `NAMED_SHORT(type, name, short)`: as above, but defining an argument
  *      without a long name. The name field is still used to access the field
  *      in the struct, however.
+ * 
+ * Each macro can also take an optional description as a tail argument, which is
+ * printed by the `CLAP_PREFIXED(fprint_descriptions)` function. 
  * 
  * The currently supported type values are:
  * - `char *`: the option is a string and should be taken as-is.
@@ -379,6 +384,76 @@ static ARGS_T *PARSE(int argc, char *argv[]) {
     return NULL;
 }
 
+#define _GET_SECOND(A, B, ...) B
+#define GET_DESCRIPTION(A, B, C, D...) _GET_SECOND(A, ## D, "")
+
+/**
+ * @brief Prints the descriptions of all options, along with their names and
+ * type information (positional arguments are specified as [positional] for
+ * their name) to the provided `stream`.
+ */
+static void FPRINT_DESCRIPTIONS(FILE *stream) {
+    fprintf(stream, "Available options are:\n");
+    #define NAMED_(TYPE, NAME, SHORT, DESC) do {\
+        const char *type_str = strcmp(#TYPE, "char *") == 0 ? "string" :    \
+                               strcmp(#TYPE, "long *") == 0 ? "long" :      \
+                               IS_BOOL(TYPE) ? "flag" : "unknown";          \
+        fprintf(stream, "\t--"#NAME", -%c: %s", SHORT, type_str);           \
+        if (DESC[0] != '\0') {                                              \
+            fprintf(stream, "\t| %s\n", DESC);                              \
+        } else {                                                            \
+            fprintf(stream, "\n");                                          \
+        }} while(0);
+    #define NAMED(T, N, S, MAYBE_DESC...) NAMED_(T, N, S, GET_DESCRIPTION(T, N, S, ##MAYBE_DESC))
+
+    #define NAMED_LONG_(TYPE, NAME, DESC) do {\
+        const char *type_str = strcmp(#TYPE, "char *") == 0 ? "string" :    \
+                               strcmp(#TYPE, "long *") == 0 ? "long" :      \
+                               IS_BOOL(TYPE) ? "flag" : "unknown";          \
+        fprintf(stream, "\t--"#NAME": %s", type_str);                       \
+        if (DESC[0] != '\0') {                                              \
+            fprintf(stream, "\t| %s\n", DESC);                              \
+        } else {                                                            \
+            fprintf(stream, "\n");                                          \
+        }} while(0);
+    #define NAMED_LONG(T, N, MAYBE_DESC...) NAMED_LONG_(T, N, GET_DESCRIPTION(T, N, '_', ##MAYBE_DESC))
+
+    #define NAMED_SHORT_(TYPE, SHORT, DESC) do {\
+        const char *type_str = strcmp(#TYPE, "char *") == 0 ? "string" :    \
+                               strcmp(#TYPE, "long *") == 0 ? "long" :      \
+                               IS_BOOL(TYPE) ? "flag" : "unknown";          \
+        fprintf(stream, "\t-%c: %s", SHORT, type_str);                      \
+        if (DESC[0] != '\0') {                                              \
+            fprintf(stream, "\t| %s\n", DESC);                              \
+        } else {                                                            \
+            fprintf(stream, "\n");                                          \
+        }} while(0);
+    #define NAMED_SHORT(T, N, S, MAYBE_DESC...) NAMED_SHORT_(T, S, GET_DESCRIPTION(T, N, S, ##MAYBE_DESC))
+
+    #define POSITIONAL_(TYPE, DESC) do {\
+        const char *type_str = strcmp(#TYPE, "char *") == 0 ? "string" :    \
+                               strcmp(#TYPE, "long *") == 0 ? "long" :      \
+                               "unknown";                                   \
+        fprintf(stream, "\t[positional]: %s", type_str);                    \
+        if (DESC[0] != '\0') {                                              \
+            fprintf(stream, "\t| %s\n", DESC);                              \
+        } else {                                                            \
+            fprintf(stream, "\n");                                          \
+        }} while(0);
+    #define POSITIONAL(T, N, MAYBE_DESC...) POSITIONAL_(T, GET_DESCRIPTION(T, N, '_', ##MAYBE_DESC))
+
+    CCLAP_ARGS
+
+    #undef POSITIONAL
+    #undef POSITIONAL_
+    #undef NAMED
+    #undef NAMED_
+    #undef NAMED_LONG
+    #undef NAMED_LONG_
+    #undef NAMED_SHORT
+    #undef NAMED_SHORT_
+}
+
 #undef ARGS_T
 #undef PARSE_POSITIONAL
 #undef PARSE_LONG
@@ -386,3 +461,4 @@ static ARGS_T *PARSE(int argc, char *argv[]) {
 #undef PARSE_NAMED
 #undef ARGS_DESTROY
 #undef PARSE
+#undef IS_BOOL

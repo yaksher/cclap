@@ -99,9 +99,10 @@ An example usage is:
 
 #define CCLAP_ARGS \
     POSITIONAL(long *, test_num)    \
-    NAMED(char *, test_str, 't')    \
-    NAMED(bool, test_flag_1, 'f')   \
-    NAMED(bool, test_flag_2, 'g')
+    NAMED(char *, test_str, 't', "Invokes baz.")    \
+    NAMED(bool, test_flag_1, 'f', "Tells foo to be bar.")   \
+    NAMED(bool, test_flag_2, 'g')   \
+    NAMED(bool, help, 'h', "Prints this description.")
 
 #include "cclap.h"
 
@@ -109,6 +110,10 @@ An example usage is:
 int main(int argc, char *argv[]) {
     cclap_args_t *args = cclap_parse(argc, argv);
     assert(args);
+    if (args->help) {
+        cclap_fprint_descriptions(stdout);
+        return 0;
+    }
     if (args->test_num) {
         printf("test_num = %ld\n", *args->test_num);
     }
