@@ -124,3 +124,29 @@ int main(int argc, char *argv[]) {
     printf("--test_flag_2 (alias -g) = %d\n", args->test_flag_2);
 }
 ```
+
+```
+>>> ./example --help
+Available options are:
+        [positional]: long
+        --test_str, -t: string  | Invokes baz.
+        --test_flag_1, -f: flag | Tells foo to be bar.
+        --test_flag_2, -g: flag
+        --help, -h: flag        | Prints this description.
+
+>>> ./example --test_str hello
+--test_str (alias -t) = `hello`
+--test_flag_1 (alias -f) = 0
+--test_flag_2 (alias -g) = 0
+
+>>> ./example -tf hello -503 
+test_num = -503
+--test_str (alias -t) = `hello`
+--test_flag_1 (alias -f) = 1
+--test_flag_2 (alias -g) = 0
+
+>>> ./example -tfg hello 
+--test_str (alias -t) = `hello`
+--test_flag_1 (alias -f) = 1
+--test_flag_2 (alias -g) = 1
+```
