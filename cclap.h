@@ -454,6 +454,9 @@ static void FPRINT_DESCRIPTIONS(FILE *stream) {
     #undef NAMED_SHORT_
 }
 
+#undef _GET_SECOND
+#undef GET_DESCRIPTION
+
 #undef ARGS_T
 #undef PARSE_POSITIONAL
 #undef PARSE_LONG
