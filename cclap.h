@@ -13,6 +13,8 @@
 #define PARSE_SHORT CCLAP_PREFIXED(_parse_short_)
 #define PARSE_NAMED CCLAP_PREFIXED(_parse_named_)
 #define FPRINT_DESCRIPTIONS CCLAP_PREFIXED(fprint_descriptions)
+#define PRINT_DESCRIPTIONS CCLAP_PREFIXED(print_descriptions)
+#define EPRINT_DESCRIPTIONS CCLAP_PREFIXED(eprint_descriptions)
 #define ARGS_DESTROY CCLAP_PREFIXED(args_destroy)
 #define PARSE CCLAP_PREFIXED(parse)
 #define IS_BOOL(TYPE) (strcmp(#TYPE, "bool") == 0 || strcmp(#TYPE, "_Bool") == 0)
@@ -390,6 +392,24 @@ static void FPRINT_DESCRIPTIONS(FILE *stream) {
 #undef NAMED_SHORT_
 #undef PRINT_DESC
 #undef TYPE_STR
+}
+
+/**
+ * @brief Prints the descriptions of all options, along with their names and
+ * type information (positional arguments are specified as [positional] for
+ * their name) to stdout.
+ */
+static void PRINT_DESCRIPTIONS() {
+    FPRINT_DESCRIPTIONS(stdout);
+}
+
+/**
+ * @brief Prints the descriptions of all options, along with their names and
+ * type information (positional arguments are specified as [positional] for
+ * their name) to stderr.
+ */
+static void EPRINT_DESCRIPTIONS() {
+    FPRINT_DESCRIPTIONS(stderr);
 }
 
 #undef _GET_SECOND
