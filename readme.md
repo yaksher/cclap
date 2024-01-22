@@ -21,7 +21,8 @@ the field in the struct to `NULL`.
 
 The fields of ARGS_T are
 - `char *process_name`: the first argument in argv
-- `char **extras`: all unprocessed arguments. This array is `NULL`-terminated.
+- `char **extras`: all unprocessed arguments and all arguments following `--`. 
+     This array is `NULL`-terminated.
 - `size_t num_extras`: the number of unprocessed arguments
 - additional fields governed by the value of the CCLAP_ARGS macro when this
      header file is included (further information below).
@@ -69,6 +70,8 @@ non-bool fields of the `ARGS_T` struct as non-`NULL` before using them.
 Arg parsing proceeds as follows:
 - The first argument is placed into the `process_name` field.
 - Named arguments are parsed next:
+  - if an argument consisting entirely of `--` is encountered, all remaining
+     remaining arguments are dumped into extras.
   - when a `--` is encountered, this is parsed as a long name, which grabs the
      the next argument as its value if it is recognized and its not a flag.
      If it isn't recognized, it is skipped for now.
@@ -88,8 +91,8 @@ Arg parsing proceeds as follows:
 - Left over arguments from named parsing are read into positional arguments
      in order. If there are fewer left over arguments than positionals,
      the tail is left missing (`NULL`).
-- Any arguments not parsed as named or positional are placed into the `extra`
-     field and `num_extra` is set appropriately. `extra` is also 
+- Any arguments not parsed as named or positional are also placed into the 
+     `extra` field and `num_extra` is set appropriately. `extra` is also 
      `NULL`-terminated.
 
 An example usage is:
@@ -122,6 +125,12 @@ int main(int argc, char *argv[]) {
     }
     printf("--test_flag_1 (alias -f) = %d\n", args->test_flag_1);
     printf("--test_flag_2 (alias -g) = %d\n", args->test_flag_2);
+    if (args->num_extra > 0) {
+        printf("extras (%lu):\n", args->num_extra);
+        for (size_t i = 0; i < args->num_extra; i++) {
+            printf("    %s\n", args->extra[i]);
+        }
+    }
 }
 ```
 
@@ -149,4 +158,13 @@ test_num = -503
 --test_str (alias -t) = `hello`
 --test_flag_1 (alias -f) = 1
 --test_flag_2 (alias -g) = 1
+
+>>> ./example -- -h 100 --test_str hello
+--test_flag_1 (alias -f) = 0
+--test_flag_2 (alias -g) = 0
+extras [4]:
+    -h
+    100
+    --test_str
+    hello
 ```

@@ -43,6 +43,12 @@ static int PARSE_POSITIONAL(ARGS_T *args) {
     if (*extra == NULL) {                               \
         goto EXIT;                                      \
     }                                                   \
+    if (strcmp(*extra, "--") == 0) {                    \
+        free(*extra);                                   \
+        *extra = NULL;                                  \
+        extra++;                                        \
+        goto EXIT;                                      \
+    }                                                   \
     if (strcmp(#TYPE, "char *") == 0) {                 \
         *(char **) &args->NAME = *extra;                \
     }                                                   \
@@ -283,8 +289,15 @@ static ARGS_T *PARSE(int argc, char *argv[]) {
     char *extra[CLAP_MAX_SUPPORTED_ARG_COUNT + 1] = { 0 };
     args->extra = extra;
     args->proccess_name = strdup(*argv++);
+    bool rest_extra = false;
     while (*argv != NULL) {
-        if (**argv == '-') {
+        if (!rest_extra && **argv == '-') {
+            if (strcmp(*argv, "--") == 0) {
+                // since we don't increment argv, the `--` will be added to
+                // the extra array on the next iteration.
+                rest_extra = true;
+                continue;
+            }
             int num_read = PARSE_NAMED(args, argv);
             if (num_read == -1) {
                 goto FAIL;

@@ -26,4 +26,10 @@ int main(int argc, char *argv[]) {
     }
     printf("--test_flag_1 (alias -f) = %d\n", args->test_flag_1);
     printf("--test_flag_2 (alias -g) = %d\n", args->test_flag_2);
+    if (args->num_extra > 0) {
+        printf("extras (%lu):\n", args->num_extra);
+        for (size_t i = 0; i < args->num_extra; i++) {
+            printf("    %s\n", args->extra[i]);
+        }
+    }
 }
