@@ -370,7 +370,9 @@ static ARGS_T *PARSE(int argc, char *argv[]) {
 
     size_t num_extra = args->num_extra - num_pos_read;
     char **extra_heap = calloc(num_extra + 1, sizeof(char *));
-    memcpy(extra_heap, args->extra, sizeof(char *) * num_pos_read);
+    for (size_t i = 0; i < num_extra; i++) {
+        extra_heap[i] = args->extra[i + num_pos_read];
+    }
     args->extra = extra_heap;
     args->num_extra = num_extra;
 
