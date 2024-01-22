@@ -340,6 +340,7 @@ static ARGS_T *PARSE(int argc, char *argv[]) {
  * type information (positional arguments are specified as [positional] for
  * their name) to the provided `stream`.
  */
+__attribute__((unused))
 static void FPRINT_DESCRIPTIONS(FILE *stream) {
     fprintf(stream, "Available options are:\n");
 #define TYPE_STR(TYPE) (strcmp(#TYPE, "char *") == 0 ? "string" :    \
@@ -399,6 +400,7 @@ static void FPRINT_DESCRIPTIONS(FILE *stream) {
  * type information (positional arguments are specified as [positional] for
  * their name) to stdout.
  */
+__attribute__((unused))
 static void PRINT_DESCRIPTIONS() {
     FPRINT_DESCRIPTIONS(stdout);
 }
@@ -408,6 +410,7 @@ static void PRINT_DESCRIPTIONS() {
  * type information (positional arguments are specified as [positional] for
  * their name) to stderr.
  */
+__attribute__((unused))
 static void EPRINT_DESCRIPTIONS() {
     FPRINT_DESCRIPTIONS(stderr);
 }
